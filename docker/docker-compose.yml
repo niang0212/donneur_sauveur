@@ -1,0 +1,14 @@
+services:
+  pipeline:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: donneur_sauveur_pipeline
+    volumes:
+      - ..:/app
+      - ../secrets:/secrets
+    env_file:
+      - ../.env.example
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /secrets/sa-donneur-sauveur.json
+    command: python --version

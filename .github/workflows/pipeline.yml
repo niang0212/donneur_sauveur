@@ -1,0 +1,23 @@
+name: Donneur Sauveur Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Télécharger le repo
+        uses: actions/checkout@v4
+
+      - name: Créer le dossier secrets
+        run: mkdir -p docker/secrets
+
+      - name: Injecter la clé GCP
+        run: echo "${{ secrets.GCP_SA_KEY }}" > docker/secrets/sa-donneur-sauveur.json
+
+      - name: Lancer le pipeline
+        run: docker compose -f docker/docker-compose.yml run pipeline bash pipelines/run_pipeline.sh
