@@ -14,10 +14,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Créer le dossier secrets
-        run: mkdir -p docker/secrets
+        run: mkdir -p secrets
 
       - name: Injecter la clé GCP
-        run: echo "${{ secrets.GCP_SA_KEY }}" > docker/secrets/sa-donneur-sauveur.json
+        run: echo "${{ secrets.GCP_SA_KEY }}" > secrets/sa-donneur-sauveur.json
 
       - name: Lancer le pipeline
         run: docker compose -f docker/docker-compose.yml run pipeline bash pipelines/run_pipeline.sh
