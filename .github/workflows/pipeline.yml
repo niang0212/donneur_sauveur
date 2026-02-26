@@ -17,7 +17,7 @@ jobs:
         run: mkdir -p secrets
 
       - name: Injecter la clé GCP
-        run: echo "${{ secrets.GCP_SA_KEY }}" > secrets/sa-donneur-sauveur.json
+        run: echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > secrets/sa-donneur-sauveur.json
 
       - name: Lancer le pipeline
         run: docker compose -f docker/docker-compose.yml run pipeline bash pipelines/run_pipeline.sh
