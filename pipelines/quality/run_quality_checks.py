@@ -59,14 +59,26 @@ for check_name, query in checks.items():
     job = client.query(query)
     result = list(job.result())[0].nb
 
-    print(f"{check_name} : {result}")
+    print(f"\n🔎 Vérification : {check_name}")
+
+    if result == 0:
+        print("✅ OK")
+    else:
+        print(f"❌ {result} anomalies détectées")
 
     if result > 0:
         critical_errors += 1
 
+print("\n=== RÉSUMÉ DES CONTRÔLES ===")
+print(f"Nombre de contrôles échoués : {critical_errors}")
 if critical_errors > 0:
     raise Exception(
-        f"❌ {critical_errors} contrôles de qualité ont échoué. Arrêt du pipeline."
-    )
+    f"""
+❌ PIPELINE ARRÊTÉ
+{critical_errors} contrôles de qualité ont échoué.
+
+Consultez les logs ci-dessus pour identifier les anomalies.
+"""
+)
 
 print("✅ Tous les contrôles de qualité sont conformes.")
