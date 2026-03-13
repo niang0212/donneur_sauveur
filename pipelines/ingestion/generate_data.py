@@ -7,7 +7,7 @@ import os
 # CONFIGURATION GLOBALE
 # =========================
 
-TOTAL_DONORS = 114_313
+TOTAL_DONORS = 114_350
 OUTPUT_DIR = "data/raw"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
