@@ -1,9 +1,13 @@
 #!/bin/bash
 set -e
 
+trap 'echo "❌ Pipeline failed at step: $BASH_COMMAND"' ERR
+
 echo "======================================"
 echo "🚀 PIPELINE DONNEUR-SAUVEUR"
 echo "======================================"
+
+echo "Start time: $(date)"
 
 echo ""
 echo "1️⃣ Génération des données simulées"
@@ -25,3 +29,5 @@ echo ""
 echo "======================================"
 echo "✅ PIPELINE TERMINÉ AVEC SUCCÈS"
 echo "======================================"
+
+echo "End time: $(date)"
