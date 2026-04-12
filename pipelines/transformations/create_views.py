@@ -46,7 +46,17 @@ VIEWS = {
           nb_donneurs_eligibles
         FROM donneur_sauveur.v_disponibilite_region_groupe
         WHERE nb_donneurs_eligibles < 50
-    """
+    """,
+
+   "v_centre": """
+        SELECT
+          id_centre,
+          nom,
+          region,
+          latitude,
+          longitude
+        FROM donneur_sauveur.raw_centers
+    """ 
 }
 
 for view_name, query in VIEWS.items():
