@@ -7,7 +7,7 @@ import os
 # CONFIGURATION GLOBALE
 # =========================
 
-TOTAL_DONORS = 114_350
+TOTAL_DONORS = 13_313
 OUTPUT_DIR = "data/raw"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -98,8 +98,8 @@ ALL_BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
 # Régions à déficit
 DEFICIT_REGIONS = {
     "Kédougou": ["A+", "B+", "O+"],
-    "Matam": ["A+", "O+", "B+"],
-    "Sédhiou": ["B+", "O+", "A+"],
+    "Matam": ["AB+", "AB-", "O+"],
+    "Sédhiou": ["B-", "O-", "A+"],
 }
 
 NOMS = ["Ndiaye", "Diop", "Fall", "Sow", "Ba", "Diallo", "Kane", "Gueye", "Faye",
@@ -161,7 +161,7 @@ for region, communes in REGIONS.items():
     commune, lat, lon = communes[0]
     centers.append({
         "id_centre": center_id,
-        "nom": f"Centre de Transfusion {region}",
+        "nom": f"{region}_Centre de Transfusion ",
         "region": region,
         "latitude": lat,
         "longitude": lon
