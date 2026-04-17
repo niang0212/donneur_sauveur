@@ -56,7 +56,15 @@ VIEWS = {
           latitude,
           longitude
         FROM donneur_sauveur.raw_centers
-    """ 
+    """,
+    "v_donations": """
+        SELECT
+          id_don,
+          id_donneur,
+          id_centre, 
+          date_don
+        FROM donneur_sauveur.raw_donations
+    """
 }
 
 for view_name, query in VIEWS.items():
