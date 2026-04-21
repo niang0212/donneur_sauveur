@@ -18,7 +18,7 @@ VIEWS = {
           longitude,
           date_dernier_don,
           DATE_DIFF(CURRENT_DATE(), date_dernier_don, DAY) AS jours_depuis_dernier_don
-        FROM donneur_sauveur.raw_donors
+        FROM donneur_sauveur.processed_donors
         WHERE DATE_DIFF(CURRENT_DATE(), date_dernier_don, DAY) >= 90
     """,
 
@@ -55,7 +55,7 @@ VIEWS = {
           region,
           latitude,
           longitude
-        FROM donneur_sauveur.raw_centers
+        FROM donneur_sauveur.processed_centers
     """,
     "v_donations": """
         SELECT
@@ -63,7 +63,7 @@ VIEWS = {
           id_donneur,
           id_centre, 
           date_don
-        FROM donneur_sauveur.raw_donations
+        FROM donneur_sauveur.processed_donations
     """
 }
 

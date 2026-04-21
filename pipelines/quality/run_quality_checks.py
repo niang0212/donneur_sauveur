@@ -1,84 +1,137 @@
-from google.cloud import bigquery
+import pandas as pd
+import os
 
-PROJECT_ID = "donneursauveur-486312"
-DATASET_ID = "donneur_sauveur"
+# =========================
+# CHEMINS
+# =========================
+RAW_PATH = "data/raw/"
+PROCESSED_PATH = "data/processed/"
 
-client = bigquery.Client(project=PROJECT_ID)
+# créer dossier processed si inexistant
+os.makedirs(PROCESSED_PATH, exist_ok=True)
 
-checks = {
-    "donneurs_incomplets": """
-        SELECT COUNT(*) AS nb
-        FROM donneur_sauveur.raw_donors
-        WHERE
-          id_donneur IS NULL
-          OR groupe_sanguin IS NULL
-          OR region IS NULL
-          OR date_dernier_don IS NULL
-    """,
-
-    "groupes_sanguins_invalides": """
-        SELECT COUNT(*) AS nb
-        FROM donneur_sauveur.raw_donors
-        WHERE groupe_sanguin NOT IN ('A+','A-','B+','B-','AB+','AB-','O+','O-')
-    """,
-
-    "coordonnees_invalides": """
-        SELECT COUNT(*) AS nb
-        FROM donneur_sauveur.raw_donors
-        WHERE
-          latitude NOT BETWEEN 12 AND 17
-          OR longitude NOT BETWEEN -18 AND -11
-    """,
-
-    "dons_orphelins": """
-        SELECT COUNT(*) AS nb
-        FROM donneur_sauveur.raw_donations d
-        LEFT JOIN donneur_sauveur.raw_donors r
-          ON d.id_donneur = r.id_donneur
-        LEFT JOIN donneur_sauveur.raw_centers c
-          ON d.id_centre = c.id_centre
-        WHERE r.id_donneur IS NULL OR c.id_centre IS NULL
-    """,
-
-    "doublons_donneurs": """
-        SELECT COUNT(*) AS nb
-        FROM (
-            SELECT id_donneur
-            FROM donneur_sauveur.raw_donors
-            GROUP BY id_donneur
-            HAVING COUNT(*) > 1
-        )
-    """
-}
+# =========================
+# CHARGEMENT
+# =========================
+donors = pd.read_csv(RAW_PATH + "donors.csv")
+donations = pd.read_csv(RAW_PATH + "donations.csv")
+centers = pd.read_csv(RAW_PATH + "centers.csv")
 
 print("=== CONTRÔLES DE QUALITÉ DES DONNÉES ===")
 
 critical_errors = 0
 
-for check_name, query in checks.items():
-    job = client.query(query)
-    result = list(job.result())[0].nb
+# =========================
+# 1. DONNEURS INCOMPLETS
+# =========================
+incomplete = donors[
+    donors["id_donneur"].isna() |
+    donors["groupe_sanguin"].isna() |
+    donors["region"].isna() |
+    donors["date_dernier_don"].isna()
+]
 
-    print(f"\n🔎 Vérification : {check_name}")
+print("\n Vérification : donneurs_incomplets")
+if len(incomplete) == 0:
+    print(" OK")
+else:
+    print(f" {len(incomplete)} anomalies détectées")
+    critical_errors += 1
 
-    if result == 0:
-        print("✅ OK")
-    else:
-        print(f"❌ {result} anomalies détectées")
+# =========================
+# 2. GROUPES INVALIDES
+# =========================
+valid_groups = ['A+','A-','B+','B-','AB+','AB-','O+','O-']
 
-    if result > 0:
-        critical_errors += 1
+invalid_groups = donors[~donors["groupe_sanguin"].isin(valid_groups)]
 
+print("\n Vérification : groupes_sanguins_invalides")
+if len(invalid_groups) == 0:
+    print(" OK")
+else:
+    print(f" {len(invalid_groups)} anomalies détectées")
+    critical_errors += 1
+
+# =========================
+# 3. COORDONNÉES INVALIDES
+# =========================
+invalid_coords = donors[
+    (donors["latitude"] < 12) | (donors["latitude"] > 17) |
+    (donors["longitude"] < -18) | (donors["longitude"] > -11)
+]
+
+print("\n Vérification : coordonnees_invalides")
+if len(invalid_coords) == 0:
+    print(" OK")
+else:
+    print(f" {len(invalid_coords)} anomalies détectées")
+    critical_errors += 1
+
+# =========================
+# 4. DOUBLONS
+# =========================
+duplicates = donors[donors.duplicated(subset=["id_donneur"])]
+
+print("\n Vérification : doublons_donneurs")
+if len(duplicates) == 0:
+    print(" OK")
+else:
+    print(f" {len(duplicates)} anomalies détectées")
+    critical_errors += 1
+
+# =========================
+# 5. DONS ORPHELINS
+# =========================
+valid_donors_ids = set(donors["id_donneur"])
+valid_centers_ids = set(centers["id_centre"])
+
+orphans = donations[
+    ~donations["id_donneur"].isin(valid_donors_ids) |
+    ~donations["id_centre"].isin(valid_centers_ids)
+]
+
+print("\n Vérification : dons_orphelins")
+if len(orphans) == 0:
+    print(" OK")
+else:
+    print(f" {len(orphans)} anomalies détectées")
+    critical_errors += 1
+
+# =========================
+# RÉSULTAT DES CONTRÔLES
+# =========================
 print("\n=== RÉSUMÉ DES CONTRÔLES ===")
 print(f"Nombre de contrôles échoués : {critical_errors}")
+
 if critical_errors > 0:
-    raise Exception(
-    f"""
-❌ PIPELINE ARRÊTÉ
-{critical_errors} contrôles de qualité ont échoué.
+    raise Exception("❌ PIPELINE ARRÊTÉ : anomalies détectées")
 
-Consultez les logs ci-dessus pour identifier les anomalies.
-"""
-)
+print("✅ Tous les contrôles sont conformes")
 
-print("✅ Tous les contrôles de qualité sont conformes.")
+# =========================
+# TRANSFORMATION (NETTOYAGE)
+# =========================
+
+# supprimer lignes invalides
+donors_clean = donors[
+    donors["id_donneur"].notna() &
+    donors["groupe_sanguin"].isin(valid_groups) &
+    donors["latitude"].between(12, 17) &
+    donors["longitude"].between(-18, -11)
+].drop_duplicates(subset=["id_donneur"])
+
+centers_clean = centers.dropna(subset=["id_centre"]).drop_duplicates()
+
+donations_clean = donations[
+    donations["id_donneur"].isin(donors_clean["id_donneur"]) &
+    donations["id_centre"].isin(centers_clean["id_centre"])
+]
+
+# =========================
+# SAUVEGARDE
+# =========================
+donors_clean.to_csv(PROCESSED_PATH + "donors.csv", index=False)
+centers_clean.to_csv(PROCESSED_PATH + "centers.csv", index=False)
+donations_clean.to_csv(PROCESSED_PATH + "donations.csv", index=False)
+
+print("\n📁 Données néttoyées et sauvegardées dans data/processed/")

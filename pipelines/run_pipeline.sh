@@ -14,16 +14,16 @@ echo "1️⃣ Génération des données simulées"
 python pipelines/ingestion/generate_data.py
 
 echo ""
-echo "2️⃣ Chargement des données dans BigQuery"
+echo "2️⃣ Contrôles de qualité des données"
+python pipelines/quality/run_quality_checks.py
+
+echo ""
+echo "3️⃣ Chargement des données dans BigQuery"
 python pipelines/ingestion/load_bigquery.py
 
 echo ""
-echo "3️⃣ Création / mise à jour des vues analytiques"
+echo "4️⃣ Création / mise à jour des vues analytiques"
 python pipelines/transformations/create_views.py
-
-echo ""
-echo "4️⃣ Contrôles de qualité des données"
-python pipelines/quality/run_quality_checks.py
 
 echo ""
 echo "======================================"
